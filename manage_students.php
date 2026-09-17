@@ -186,48 +186,53 @@ if ($result) {
 </head>
 <body>
 
-<!-- Header Component with Selection Box -->
-<div class="dash-header" style="height: 75px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+<!-- TOP HEADER -->
+<div class="dash-header">
     <div class="header-title">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
         <i class="fa-solid fa-school"></i>
-        <span><?php echo $t['admin_panel']; ?> - <?php echo $t['welcome']; ?>, <?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></span>
+        <span><?php echo $t['admin_panel']; ?></span>
     </div>
-    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-        <a href="logout.php" class="logout-btn" style="margin:0; padding: 4px 10px; font-size: 12px;"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
-        <form method="GET" style="margin: 0; padding: 0;">
-            <?php if(!empty($filter_class)): ?><input type="hidden" name="filter_class" value="<?php echo htmlspecialchars($filter_class); ?>"><?php endif; ?>
-            <select name="lang" onchange="this.form.submit()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">
-                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?> style="color: black;">English</option>
-                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?> style="color: black;">हिंदी (Hindi)</option>
+    <div class="header-right">
+        <a href="logout.php" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
+        <form method="GET">
+            <select name="lang" onchange="this.form.submit()" class="lang-select">
+                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?>>English</option>
+                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?>>हिंदी (Hindi)</option>
             </select>
         </form>
     </div>
 </div>
 
-<div class="dash-container">
+<!-- OVERLAY FOR MOBILE SIDEBAR -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebarMenu">
+    <a href="admin_dashboard.php"><i class="fa-solid fa-chart-pie"></i> <?php echo $t['overview']; ?></a>
+    <a href="manage_students.php" class="active"><i class="fa-solid fa-user-graduate"></i> <?php echo $t['m_students']; ?></a>
+    <a href="manage_teachers.php"><i class="fa-solid fa-chalkboard-user"></i> <?php echo $t['m_teachers']; ?></a>
+    <a href="manage_classes.php"><i class="fa-solid fa-door-open"></i> <?php echo $t['m_classes']; ?></a>
+    <a href="upload_lesson.php"><i class="fa-solid fa-upload"></i> <?php echo $t['m_upload']; ?></a>
+    <a href="view_reports.php"><i class="fa-solid fa-file-lines"></i> <?php echo $t['m_reports']; ?></a>
+</aside>
+
+<!-- MAIN PANEL -->
+<div class="main-panel">
     <div class="page-title">
-        <h1><?php echo $t['admin_panel']; ?></h1>
+        <h1><?php echo $t['m_students']; ?></h1>
         <p><?php echo $t['manage_desc']; ?></p>
     </div>
 
-    <!-- Allignment -->
-    <div class="text-menu-bar">
-        <a href="admin_dashboard.php" class="text-menu-item"><h2><?php echo $t['overview']; ?></h2></a>
-        <a href="manage_students.php" class="text-menu-item active"><h2><?php echo $t['m_students']; ?></h2></a>
-        <a href="manage_teachers.php" class="text-menu-item"><h2><?php echo $t['m_teachers']; ?></h2></a>
-        <a href="manage_classes.php" class="text-menu-item"><h2><?php echo $t['m_classes']; ?></h2></a>
-        <a href="upload_lesson.php" class="text-menu-item"><h2><?php echo $t['m_upload']; ?></h2></a>
-        <a href="view_reports.php" class="text-menu-item"><h2><?php echo $t['m_reports']; ?></h2></a>
-    </div>
-
     <?php if (isset($error)): ?>
-        <div style="background: #fee; color: #b91c1c; padding: 15px; margin-top: 20px; border-radius: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $error; ?></div>
+        <div style="background: #fee; color: #b91c1c; padding: 15px; margin-bottom: 20px; border-radius: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $error; ?></div>
     <?php endif; ?>
     <?php if (isset($success)): ?>
-        <div style="background: #d1fae5; color: #065f46; padding: 15px; margin-top: 20px; border-radius: 5px; line-height: 1.5;"><i class="fa-solid fa-check-circle"></i> <?php echo $success; ?></div>
+        <div style="background: #d1fae5; color: #065f46; padding: 15px; margin-bottom: 20px; border-radius: 5px; line-height: 1.5;"><i class="fa-solid fa-check-circle"></i> <?php echo $success; ?></div>
     <?php endif; ?>
 
-    <div style="background: white; padding: 25px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
+    <!-- ADD / EDIT FORM -->
+    <div style="background: white; padding: 25px; margin-bottom: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
         <h3 style="margin-top: 0; color: var(--primary-color);">
             <i class="fa-solid fa-user-plus"></i> <?php echo $editData ? $t['edit_stu'] : $t['add_stu']; ?>
         </h3>
@@ -297,17 +302,18 @@ if ($result) {
                 </div>
             </div>
 
-            <button type="submit" class="action-btn" style="background: var(--accent-color); border: none; cursor: pointer;">
+            <button type="submit" class="btn-dark" style="border: none; cursor: pointer; margin-top: 10px;">
                 <i class="fa-solid <?php echo $editData ? 'fa-save' : 'fa-plus'; ?>"></i>
                 <?php echo $editData ? $t['btn_update'] : $t['btn_admit']; ?>
             </button>
             <?php if ($editData): ?>
-                <a href="manage_students.php" class="action-btn" style="background: #6b7280; text-decoration:none; display:inline-block; padding:10px 20px; border-radius:6px;"><?php echo $t['btn_cancel']; ?></a>
+                <a href="manage_students.php" class="btn-dark" style="background: #6b7280; text-decoration:none; display:inline-block; margin-top: 10px;"><?php echo $t['btn_cancel']; ?></a>
             <?php endif; ?>
         </form>
     </div>
 
-    <div style="background: white; padding: 25px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
+    <!-- STUDENT DIRECTORY -->
+    <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
             <h3 style="margin: 0; color: var(--primary-color);">
                 <i class="fa-solid fa-users"></i> <?php echo $t['directory']; ?> (<?php echo count($students); ?>)
@@ -332,7 +338,7 @@ if ($result) {
 
         <?php if (count($students) > 0): ?>
             <div style="overflow-x: auto;">
-                <table class="dash-table" style="width: 100%;">
+                <table class="dash-table">
                     <thead>
                         <tr>
                             <th><?php echo $t['th_roll']; ?></th>
@@ -346,25 +352,19 @@ if ($result) {
                     <tbody>
                         <?php foreach ($students as $s): ?>
                         <tr>
-                            <td><strong style="color: var(--primary-color);"><?php echo htmlspecialchars($s['username']); ?></strong></td>
+                            <td><strong class="student-name"><?php echo htmlspecialchars($s['username']); ?></strong></td>
                             <td>
                                 <?php if(!empty($s['photo_path'])): ?>
-                                    <img src="<?php echo $s['photo_path']; ?>" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px;">
+                                    <img src="<?php echo $s['photo_path']; ?>" class="student-photo" alt="Photo">
                                 <?php endif; ?>
-                                <strong><?php echo htmlspecialchars($s['full_name']); ?></strong>
+                                <strong class="student-name"><?php echo htmlspecialchars($s['full_name']); ?></strong>
                             </td>
                             <td>Class <?php echo htmlspecialchars($s['class']); ?></td>
                             <td><?php echo htmlspecialchars($s['father_name']); ?></td>
                             <td><?php echo date('d M Y', strtotime($s['created_at'])); ?></td>
                             <td class="action-icons">
-                                <a href="manage_students.php?edit_id=<?php echo $s['id']; ?>" style="color: #2563eb;" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
-                                <a href="manage_students.php?delete_id=<?php echo $s['id']; ?>" 
-                                   onclick="return confirm('Delete this student permanently?');" 
-                                   style="color: #ef4444;" title="Delete">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </a>
+                                <a href="manage_students.php?edit_id=<?php echo $s['id']; ?>" class="edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <a href="manage_students.php?delete_id=<?php echo $s['id']; ?>" onclick="return confirm('Delete this student permanently?');" class="delete" title="Delete"><i class="fa-solid fa-trash-can"></i></a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -376,6 +376,20 @@ if ($result) {
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebarMenu');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+        document.getElementById('sidebarMenu').classList.remove('show');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+</script>
 
 </body>
 </html>

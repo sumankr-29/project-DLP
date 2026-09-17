@@ -14,13 +14,8 @@ if (isset($_GET['lang'])) {
 $lang = $_SESSION['lang'] ?? 'en';
 $t = require "languages/dashboard-lang/{$lang}.php";
 
-// ----- 1. FETCH DASHBOARD STATISTICS -----
-$stats = [
-    'students' => 0,
-    'teachers' => 0,
-    'classes' => 0,
-    'materials' => 0
-];
+// ----- FETCH DASHBOARD STATISTICS -----
+$stats = ['students' => 0, 'teachers' => 0, 'classes' => 0, 'materials' => 0];
 
 $res = $conn->query("SELECT COUNT(*) AS count FROM users WHERE role='student'");
 if ($res) $stats['students'] = $res->fetch_assoc()['count'];
@@ -28,20 +23,16 @@ if ($res) $stats['students'] = $res->fetch_assoc()['count'];
 $res = $conn->query("SELECT COUNT(*) AS count FROM users WHERE role='teacher'");
 if ($res) $stats['teachers'] = $res->fetch_assoc()['count'];
 
-// Count distinct classes that have subjects assigned
 $res = $conn->query("SELECT COUNT(DISTINCT class_name) AS count FROM class_subjects");
 if ($res) $stats['classes'] = $res->fetch_assoc()['count'];
 
 $res = $conn->query("SELECT COUNT(*) AS count FROM lessons");
 if ($res) $stats['materials'] = $res->fetch_assoc()['count'];
 
-
-// ----- 2. FETCH RECENTLY ADDED STUDENTS -----
+// ----- FETCH RECENTLY ADDED STUDENTS -----
 $recent_students = [];
 $query = "SELECT id, username, full_name, class, father_name, created_at, photo_path 
-          FROM users 
-          WHERE role='student' 
-          ORDER BY id DESC LIMIT 5"; // Gets the 5 newest students
+          FROM users WHERE role='student' ORDER BY id DESC LIMIT 5"; 
 
 $result = $conn->query($query);
 if ($result) {
@@ -51,166 +42,235 @@ if ($result) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang; ?>">
+<html lang="<?php echo htmlspecialchars($lang); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $t['admin_panel']; ?> - GSSS Maranga</title>
+    <title><?php echo htmlspecialchars($t['admin_panel']); ?> - GSSS Maranga</title>
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Dashboard Stylesheet (Points to css folder) -->
     <link rel="stylesheet" href="css/dashboard.css">
-    <style>
-        /* Stats Grid Styling */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 30px; }
-        .stat-box { background: white; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .stat-icon { font-size: 24px; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; border-radius: 50%; }
-        .stat-info h3 { margin: 0; font-size: 26px; color: var(--primary-color); }
-        .stat-info p { margin: 5px 0 0; color: var(--text-muted); font-size: 13px; font-weight: bold; }
-        
-        /* Table Action Icons */
-        .dash-table .action-icons a { margin: 0 8px; font-size: 16px; }
-        
-        /* Dark Action Buttons */
-        .quick-actions { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; }
-        .btn-dark { background: #0f172a; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
-        .btn-dark:hover { transform: translateY(-2px); background: #1e293b; }
-    </style>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js for rendering graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-    <div class="dash-header" style="height: 75px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+    <!-- TOP HEADER -->
+    <div class="dash-header">
         <div class="header-title">
+            <button class="menu-toggle-btn" onclick="toggleSidebar()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <i class="fa-solid fa-school"></i>
-            <span><?php echo $t['admin_panel']; ?> - <?php echo $t['welcome']; ?>, <?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></span>
+            <span><?php echo htmlspecialchars($t['admin_panel']); ?></span>
         </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-            <a href="logout.php" class="logout-btn" style="margin:0; padding: 4px 10px; font-size: 12px;"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
-            <form method="GET" style="margin: 0; padding: 0;">
-                <select name="lang" onchange="this.form.submit()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">
-                    <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?> style="color: black;">English</option>
-                    <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?> style="color: black;">हिंदी (Hindi)</option>
+        <div class="header-right">
+            <a href="logout.php" class="logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> <?php echo htmlspecialchars($t['logout']); ?>
+            </a>
+            <form method="GET">
+                <select name="lang" onchange="this.form.submit()" class="lang-select">
+                    <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?>>English</option>
+                    <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?>>हिंदी (Hindi)</option>
                 </select>
             </form>
         </div>
     </div>
 
-    <div class="dash-container">
-        <div class="page-title">
-            <h1><?php echo $t['admin_panel']; ?></h1>
-            <p><?php echo $t['manage_platform']; ?></p>
-        </div>
+    <!-- OVERLAY FOR MOBILE SIDEBAR -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- SIDEBAR (Hidden by default) -->
+    <aside class="sidebar" id="sidebarMenu">
+        <a href="admin_dashboard.php" class="active"><i class="fa-solid fa-chart-pie"></i> <?php echo htmlspecialchars($t['menu_overview']); ?></a>
+        <a href="manage_students.php"><i class="fa-solid fa-user-graduate"></i> <?php echo htmlspecialchars($t['menu_students']); ?></a>
+        <a href="manage_teachers.php"><i class="fa-solid fa-chalkboard-user"></i> <?php echo htmlspecialchars($t['menu_teachers']); ?></a>
+        <a href="manage_classes.php"><i class="fa-solid fa-door-open"></i> <?php echo htmlspecialchars($t['menu_classes']); ?></a>
+        <a href="upload_lesson.php"><i class="fa-solid fa-upload"></i> <?php echo htmlspecialchars($t['menu_upload']); ?></a>
+        <a href="view_reports.php"><i class="fa-solid fa-file-lines"></i> <?php echo htmlspecialchars($t['menu_reports']); ?></a>
+    </aside>
+
+    <!-- MAIN PANEL -->
+    <div class="main-panel">
         
-        <div class="text-menu-bar">
-            <a href="admin_dashboard.php" class="text-menu-item active">
-                <h2><?php echo $t['menu_overview']; ?></h2>
+        <div class="page-title">
+            <h1><?php echo htmlspecialchars($t['welcome']); ?>, <?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?> 👋</h1>
+            <p><?php echo htmlspecialchars($t['manage_platform']); ?></p>
+        </div>
+
+        <!-- HORIZONTAL QUICK ACTIONS ROW -->
+        <div class="quick-actions-horizontal">
+            <a href="manage_students.php" class="qa-h-btn student">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Add Student</span>
             </a>
-            <a href="manage_students.php" class="text-menu-item">
-                <h2><?php echo $t['menu_students']; ?></h2>
+            <a href="manage_teachers.php" class="qa-h-btn teacher">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                <span>Add Teacher</span>
             </a>
-            <a href="manage_teachers.php" class="text-menu-item">
-                <h2><?php echo $t['menu_teachers']; ?></h2>
+            <a href="manage_classes.php" class="qa-h-btn class">
+                <i class="fa-solid fa-door-open"></i>
+                <span>Add Class</span>
             </a>
-            <a href="manage_classes.php" class="text-menu-item">
-                <h2><?php echo $t['menu_classes']; ?></h2>
-            </a>
-            <a href="upload_lesson.php" class="text-menu-item">
-                <h2><?php echo $t['menu_upload']; ?></h2>
-            </a>
-            <a href="view_reports.php" class="text-menu-item">
-                <h2><?php echo $t['menu_reports']; ?></h2>
+            <a href="upload_lesson.php" class="qa-h-btn material">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>Upload Material</span>
             </a>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-icon" style="background: #eff6ff; color: #3b82f6;"><i class="fa-solid fa-user-graduate"></i></div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['students']; ?></h3>
-                    <p><?php echo $t['stat_students']; ?></p>
-                </div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-icon" style="background: #dcfce7; color: #16a34a;"><i class="fa-solid fa-chalkboard-user"></i></div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['teachers']; ?></h3>
-                    <p><?php echo $t['stat_teachers']; ?></p>
-                </div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-icon" style="background: #fef9c3; color: #ca8a04;"><i class="fa-solid fa-door-open"></i></div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['classes']; ?></h3>
-                    <p><?php echo $t['stat_classes']; ?></p>
-                </div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-icon" style="background: #fce7f3; color: #db2777;"><i class="fa-solid fa-folder-open"></i></div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['materials']; ?></h3>
-                    <p><?php echo $t['stat_materials']; ?></p>
-                </div>
-            </div>
-        </div>
-
-        <div style="background: white; padding: 25px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
-            <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--primary-color);">
-                <i class="fa-solid fa-clock-rotate-left"></i> <?php echo $t['recent_students']; ?>
-            </h3>
+        <!-- DASHBOARD GRID -->
+        <div class="dashboard-grid">
             
-            <?php if (count($recent_students) > 0): ?>
-                <div style="overflow-x: auto;">
-                    <table class="dash-table" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th><?php echo $t['roll_no']; ?></th>
-                                <th><?php echo $t['full_name']; ?></th>
-                                <th><?php echo $t['class']; ?></th>
-                                <th><?php echo $t['father_name']; ?></th>
-                                <th><?php echo $t['admission_date']; ?></th>
-                                <th><?php echo $t['actions']; ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recent_students as $s): ?>
-                            <tr>
-                                <td><strong style="color: var(--primary-color);"><?php echo htmlspecialchars($s['username']); ?></strong></td>
-                                <td>
-                                    <?php if(!empty($s['photo_path'])): ?>
-                                        <img src="<?php echo $s['photo_path']; ?>" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px;">
-                                    <?php endif; ?>
-                                    <strong><?php echo htmlspecialchars($s['full_name']); ?></strong>
-                                </td>
-                                <td>Class <?php echo htmlspecialchars($s['class']); ?></td>
-                                <td><?php echo htmlspecialchars($s['father_name']); ?></td>
-                                <td><?php echo date('d M Y', strtotime($s['created_at'])); ?></td>
-                                <td class="action-icons">
-                                    <a href="manage_students.php?edit_id=<?php echo $s['id']; ?>" style="color: #2563eb;" title="Edit">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </a>
-                                    <a href="manage_students.php?delete_id=<?php echo $s['id']; ?>" 
-                                       onclick="return confirm('Delete this student permanently?');" 
-                                       style="color: #ef4444;" title="Delete">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+            <!-- LEFT: Recent Students -->
+            <div>
+                <div class="dashboard-card">
+                    <h3><i class="fa-solid fa-user-clock"></i> <?php echo htmlspecialchars($t['recent_students']); ?></h3>
+                    
+                    <?php if (count($recent_students) > 0): ?>
+                        <div style="overflow-x: auto;">
+                            <table class="dash-table">
+                                <thead>
+                                    <tr>
+                                        <th><?php echo htmlspecialchars($t['roll_no']); ?></th>
+                                        <th><?php echo htmlspecialchars($t['full_name']); ?></th>
+                                        <th><?php echo htmlspecialchars($t['class']); ?></th>
+                                        <th><?php echo htmlspecialchars($t['admission_date']); ?></th>
+                                        <th><?php echo htmlspecialchars($t['actions']); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($recent_students as $s): ?>
+                                    <tr>
+                                        <td><strong class="student-name"><?php echo htmlspecialchars($s['username']); ?></strong></td>
+                                        <td>
+                                            <?php if(!empty($s['photo_path'])): ?>
+                                                <img src="<?php echo htmlspecialchars($s['photo_path']); ?>" class="student-photo" alt="Photo">
+                                            <?php endif; ?>
+                                            <strong class="student-name"><?php echo htmlspecialchars($s['full_name']); ?></strong>
+                                        </td>
+                                        <td><span class="class-badge">Class <?php echo htmlspecialchars($s['class']); ?></span></td>
+                                        <td><?php echo date('d M Y', strtotime($s['created_at'])); ?></td>
+                                        <td class="action-icons">
+                                            <a href="manage_students.php?edit_id=<?php echo $s['id']; ?>" class="edit" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                                            <a href="manage_students.php?delete_id=<?php echo $s['id']; ?>" onclick="return confirm('Delete this student permanently?');" class="delete" title="Delete"><i class="fa-solid fa-trash"></i></a>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <p style="color: #64748b; font-size: 14px; text-align:center; padding: 30px;">
+                            <?php echo htmlspecialchars($t['no_students']); ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
-            <?php else: ?>
-                <p style="color: var(--text-muted);"><?php echo $t['no_students']; ?></p>
-            <?php endif; ?>
-        </div>
+            </div>
 
-        <div class="quick-actions">
-            <a href="manage_students.php" class="btn-dark"><i class="fa-solid fa-plus"></i> <?php echo $t['add_student']; ?></a>
-            <a href="manage_teachers.php" class="btn-dark"><i class="fa-solid fa-plus"></i> <?php echo $t['add_teacher']; ?></a>
-            <a href="manage_classes.php" class="btn-dark"><i class="fa-solid fa-plus"></i> <?php echo $t['add_class']; ?></a>
-            <a href="upload_lesson.php" class="btn-dark"><i class="fa-solid fa-upload"></i> <?php echo $t['upload_material']; ?></a>
-        </div>
+            <!-- RIGHT: Chart -->
+            <div>
+                <div class="dashboard-card">
+                    <h3><i class="fa-solid fa-chart-simple"></i> Overview Statistics</h3>
+                    <div class="chart-container">
+                        <canvas id="overviewChart"></canvas>
+                    </div>
+                </div>
+            </div>
 
+        </div>
     </div>
 
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebarMenu');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebarMenu').classList.remove('show');
+            document.getElementById('sidebarOverlay').classList.remove('show');
+        }
+
+        // Chart.js initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('overviewChart').getContext('2d');
+            
+            const data = [
+                <?php echo (int)$stats['students']; ?>, 
+                <?php echo (int)$stats['teachers']; ?>, 
+                <?php echo (int)$stats['classes']; ?>, 
+                <?php echo (int)$stats['materials']; ?>
+            ];
+            
+            const maxVal = Math.max(...data);
+            const stepSize = Math.ceil(maxVal / 5) || 1;
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Students', 'Teachers', 'Classes', 'Materials'],
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.85)',
+                            'rgba(16, 185, 129, 0.85)',
+                            'rgba(245, 158, 11, 0.85)',
+                            'rgba(139, 92, 246, 0.85)'
+                        ],
+                        borderColor: [
+                            '#2563eb',
+                            '#059669',
+                            '#d97706',
+                            '#7c3aed'
+                        ],
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: maxVal * 1.2,
+                            ticks: {
+                                stepSize: stepSize,
+                                precision: 0,
+                                font: { size: 12 }
+                            },
+                            grid: {
+                                color: '#f1f5f9'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

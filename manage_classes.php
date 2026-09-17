@@ -146,46 +146,53 @@ if ($result) {
 </head>
 <body>
 
-<div class="dash-header" style="height: 75px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+<!-- TOP HEADER -->
+<div class="dash-header">
     <div class="header-title">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
         <i class="fa-solid fa-school"></i>
-        <span><?php echo $t['admin_panel']; ?> - <?php echo $t['welcome']; ?>, <?php echo htmlspecialchars($_SESSION['full_name'] ?? ''); ?></span>
+        <span><?php echo $t['admin_panel']; ?></span>
     </div>
-    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-        <a href="logout.php" class="logout-btn" style="margin:0; padding: 4px 10px; font-size: 12px;"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
-        <form method="GET" style="margin: 0; padding: 0;">
-            <?php if(!empty($filter_class)): ?><input type="hidden" name="filter_class" value="<?php echo htmlspecialchars($filter_class); ?>"><?php endif; ?>
-            <select name="lang" onchange="this.form.submit()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">
-                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?> style="color: black;">English</option>
-                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?> style="color: black;">हिंदी (Hindi)</option>
+    <div class="header-right">
+        <a href="logout.php" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
+        <form method="GET">
+            <select name="lang" onchange="this.form.submit()" class="lang-select">
+                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?>>English</option>
+                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?>>हिंदी (Hindi)</option>
             </select>
         </form>
     </div>
 </div>
 
-<div class="dash-container">
+<!-- OVERLAY FOR MOBILE SIDEBAR -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebarMenu">
+    <a href="admin_dashboard.php"><i class="fa-solid fa-chart-pie"></i> <?php echo $t['overview']; ?></a>
+    <a href="manage_students.php"><i class="fa-solid fa-user-graduate"></i> <?php echo $t['m_students']; ?></a>
+    <a href="manage_teachers.php"><i class="fa-solid fa-chalkboard-user"></i> <?php echo $t['m_teachers']; ?></a>
+    <a href="manage_classes.php" class="active"><i class="fa-solid fa-door-open"></i> <?php echo $t['m_classes']; ?></a>
+    <a href="upload_lesson.php"><i class="fa-solid fa-upload"></i> <?php echo $t['m_upload']; ?></a>
+    <a href="view_reports.php"><i class="fa-solid fa-file-lines"></i> <?php echo $t['m_reports']; ?></a>
+</aside>
+
+<!-- MAIN PANEL -->
+<div class="main-panel">
     <div class="page-title">
-        <h1><?php echo $t['admin_panel']; ?></h1>
+        <h1><?php echo $t['m_classes']; ?></h1>
         <p><?php echo $t['manage_desc']; ?></p>
     </div>
 
-    <div class="text-menu-bar">
-        <a href="admin_dashboard.php" class="text-menu-item"><h2><?php echo $t['overview']; ?></h2></a>
-        <a href="manage_students.php" class="text-menu-item"><h2><?php echo $t['m_students']; ?></h2></a>
-        <a href="manage_teachers.php" class="text-menu-item"><h2><?php echo $t['m_teachers']; ?></h2></a>
-        <a href="manage_classes.php" class="text-menu-item active"><h2><?php echo $t['m_classes']; ?></h2></a>
-        <a href="upload_lesson.php" class="text-menu-item"><h2><?php echo $t['m_upload']; ?></h2></a>
-        <a href="view_reports.php" class="text-menu-item"><h2><?php echo $t['m_reports']; ?></h2></a>
-    </div>
-
     <?php if (isset($error)): ?>
-        <div style="background: #fee; color: #b91c1c; padding: 15px; margin-top: 20px; border-radius: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $error; ?></div>
+        <div style="background: #fee; color: #b91c1c; padding: 15px; margin-bottom: 20px; border-radius: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $error; ?></div>
     <?php endif; ?>
     <?php if (isset($success)): ?>
-        <div style="background: #d1fae5; color: #065f46; padding: 15px; margin-top: 20px; border-radius: 5px; line-height: 1.6;"><i class="fa-solid fa-check-circle"></i> <?php echo $success; ?></div>
+        <div style="background: #d1fae5; color: #065f46; padding: 15px; margin-bottom: 20px; border-radius: 5px; line-height: 1.6;"><i class="fa-solid fa-check-circle"></i> <?php echo $success; ?></div>
     <?php endif; ?>
 
-    <div style="background: white; padding: 25px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
+    <!-- ADD / EDIT FORM -->
+    <div style="background: white; padding: 25px; margin-bottom: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
         <h3 style="margin-top: 0; color: var(--primary-color);">
             <i class="fa-solid fa-book-open"></i> <?php echo $editData ? $t['edit_track'] : $t['add_track']; ?>
         </h3>
@@ -208,7 +215,7 @@ if ($result) {
                     <label><?php echo $t['lbl_subject']; ?></label>
                     <select name="subject_name" id="subjectSelect" required>
                         <option value=""><?php echo $t['opt_choose_sub']; ?></option>
-                        </select>
+                    </select>
                 </div>
                 <div>
                     <label><?php echo $t['lbl_teacher']; ?></label>
@@ -222,17 +229,18 @@ if ($result) {
                 </div>
             </div>
 
-            <button type="submit" class="action-btn" style="background: var(--accent-color); border: none; cursor: pointer;">
+            <button type="submit" class="btn-dark" style="border: none; cursor: pointer;">
                 <i class="fa-solid <?php echo $editData ? 'fa-save' : 'fa-link'; ?>"></i>
                 <?php echo $editData ? $t['btn_update'] : $t['btn_create']; ?>
             </button>
             <?php if ($editData): ?>
-                <a href="manage_classes.php" class="action-btn" style="background: #6b7280; text-decoration: none; padding: 10px 20px; display: inline-block; border-radius: 6px;"><?php echo $t['btn_cancel']; ?></a>
+                <a href="manage_classes.php" class="btn-dark" style="background: #6b7280; text-decoration:none; display:inline-block;"><?php echo $t['btn_cancel']; ?></a>
             <?php endif; ?>
         </form>
     </div>
 
-    <div style="background: white; padding: 25px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
+    <!-- DIRECTORY -->
+    <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
             <h3 style="margin: 0; color: var(--primary-color);">
                 <i class="fa-solid fa-layer-group"></i> <?php echo $t['directory']; ?>
@@ -253,7 +261,7 @@ if ($result) {
         
         <?php if (count($class_mappings) > 0): ?>
             <div style="overflow-x: auto;">
-                <table class="dash-table" style="width: 100%;">
+                <table class="dash-table">
                     <thead>
                         <tr>
                             <th><?php echo $t['th_sno']; ?></th>
@@ -277,8 +285,8 @@ if ($result) {
                                 <?php endif; ?>
                             </td>
                             <td class="action-icons">
-                                <a href="manage_classes.php?edit_id=<?php echo $cm['id']; ?>" style="color: #2563eb;"><i class="fa-solid fa-pen-to-square"></i></a>
-                                <a href="manage_classes.php?delete_id=<?php echo $cm['id']; ?>" onclick="return confirm('Remove allocation?');" style="color: #ef4444;"><i class="fa-solid fa-trash-can"></i></a>
+                                <a href="manage_classes.php?edit_id=<?php echo $cm['id']; ?>" class="edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <a href="manage_classes.php?delete_id=<?php echo $cm['id']; ?>" onclick="return confirm('Remove allocation?');" class="delete" title="Delete"><i class="fa-solid fa-trash-can"></i></a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -291,12 +299,23 @@ if ($result) {
     </div>
 </div>
 
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebarMenu');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+        document.getElementById('sidebarMenu').classList.remove('show');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+</script>
+
 <script type="text/javascript">
     const subjectMap = {
-        // Core Lower/Secondary School Allocations
         'default': ['Hindi', 'Urdu', 'Sanskrit', 'Science', 'Social Science', 'Maths', 'English'],
-        
-        // Higher Secondary Streams (Classes 11 & 12)
         'science': ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'English', 'Hindi', 'Physical Education'],
         'commerce': ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'Electives', 'English', 'Hindi'],
         'arts': ['Psychology', 'Sociology', 'Home Science', 'Physical Education', 'History', 'Political Science', 'Geography', 'English', 'Hindi']
@@ -307,21 +326,15 @@ if ($result) {
         const subjectSelect = document.getElementById('subjectSelect');
         const selectedClass = classSelect.value;
 
-        // Clear previous options except placeholder
-        subjectSelect.innerHTML = `<option value="">${classSelect.options[0].text === '-- Choose Class --' ? '-- Choose Predefined Subject --' : '-- पूर्व निर्धारित विषय चुनें --'}</option>`;
+        subjectSelect.innerHTML = `<option value="">-- Choose Predefined Subject --</option>`;
 
         if (!selectedClass) return;
 
         let targetStream = 'default';
-        if (selectedClass.includes('Science')) {
-            targetStream = 'science';
-        } else if (selectedClass.includes('Commerce')) {
-            targetStream = 'commerce';
-        } else if (selectedClass.includes('Arts')) {
-            targetStream = 'arts';
-        }
+        if (selectedClass.includes('Science')) targetStream = 'science';
+        else if (selectedClass.includes('Commerce')) targetStream = 'commerce';
+        else if (selectedClass.includes('Arts')) targetStream = 'arts';
 
-        // Generate options dynamically
         subjectMap[targetStream].forEach(subject => {
             const isSelected = (subject === selectedVal) ? 'selected' : '';
             const optionTag = `<option value="${subject}" ${isSelected}>${subject}</option>`;
@@ -329,7 +342,6 @@ if ($result) {
         });
     }
 
-    // Handles edit mode loading state parameters natively
     document.addEventListener("DOMContentLoaded", function() {
         <?php if($editData): ?>
             syncDynamicSubjects("<?php echo htmlspecialchars($editData['subject_name']); ?>");
