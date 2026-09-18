@@ -86,13 +86,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($edit_id) {
                 // SCENARIO A: UPDATE EXISTING TEACHER PROFILE
                 if (!empty($new_password)) {
-                    // Update profile AND change password simultaneously
                     $hashed_pass = password_hash($new_password, PASSWORD_BCRYPT);
                     $sql = "UPDATE users SET full_name=?, father_name=?, dob=?, gender=?, username=?, contact_number=?, address=?, photo_path=?, password=? WHERE id=? AND role='teacher'";
                     $stmt = $conn->prepare($sql);
                     $stmt->bind_param("sssssssssi", $fullname, $father, $dob, $gender, $email, $phone, $address, $photo_path, $hashed_pass, $edit_id);
                 } else {
-                    // Update profile parameters only (keep existing password alive)
                     $sql = "UPDATE users SET full_name=?, father_name=?, dob=?, gender=?, username=?, contact_number=?, address=?, photo_path=? WHERE id=? AND role='teacher'";
                     $stmt = $conn->prepare($sql);
                     $stmt->bind_param("ssssssssi", $fullname, $father, $dob, $gender, $email, $phone, $address, $photo_path, $edit_id);
@@ -184,46 +182,53 @@ if ($result) {
 </head>
 <body>
 
-<div class="dash-header" style="height: 75px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+<!-- TOP HEADER -->
+<div class="dash-header">
     <div class="header-title">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
         <i class="fa-solid fa-school"></i>
-        <span><?php echo $t['admin_panel']; ?> - <?php echo $t['welcome']; ?>, <?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></span>
+        <span><?php echo $t['admin_panel']; ?></span>
     </div>
-    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-        <a href="logout.php" class="logout-btn" style="margin:0; padding: 4px 10px; font-size: 12px;"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
-        <form method="GET" style="margin: 0; padding: 0;">
-            <?php if($editData): ?><input type="hidden" name="edit_id" value="<?php echo $editData['id']; ?>"><?php endif; ?>
-            <select name="lang" onchange="this.form.submit()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">
-                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?> style="color: black;">English</option>
-                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?> style="color: black;">हिंदी (Hindi)</option>
+    <div class="header-right">
+        <a href="logout.php" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
+        <form method="GET">
+            <select name="lang" onchange="this.form.submit()" class="lang-select">
+                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?>>English</option>
+                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?>>हिंदी (Hindi)</option>
             </select>
         </form>
     </div>
 </div>
 
-<div class="dash-container">
+<!-- OVERLAY FOR MOBILE SIDEBAR -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebarMenu">
+    <a href="admin_dashboard.php"><i class="fa-solid fa-chart-pie"></i> <?php echo $t['overview']; ?></a>
+    <a href="manage_students.php"><i class="fa-solid fa-user-graduate"></i> <?php echo $t['m_students']; ?></a>
+    <a href="manage_teachers.php" class="active"><i class="fa-solid fa-chalkboard-user"></i> <?php echo $t['m_teachers']; ?></a>
+    <a href="manage_classes.php"><i class="fa-solid fa-door-open"></i> <?php echo $t['m_classes']; ?></a>
+    <a href="upload_lesson.php"><i class="fa-solid fa-upload"></i> <?php echo $t['m_upload']; ?></a>
+    <a href="view_reports.php"><i class="fa-solid fa-file-lines"></i> <?php echo $t['m_reports']; ?></a>
+</aside>
+
+<!-- MAIN PANEL -->
+<div class="main-panel">
     <div class="page-title">
-        <h1><?php echo $t['admin_panel']; ?></h1>
+        <h1><?php echo $t['m_teachers']; ?></h1>
         <p><?php echo $t['manage_desc']; ?></p>
     </div>
 
-    <div class="text-menu-bar">
-        <a href="admin_dashboard.php" class="text-menu-item"><h2><?php echo $t['overview']; ?></h2></a>
-        <a href="manage_students.php" class="text-menu-item"><h2><?php echo $t['m_students']; ?></h2></a>
-        <a href="manage_teachers.php" class="text-menu-item active"><h2><?php echo $t['m_teachers']; ?></h2></a>
-        <a href="manage_classes.php" class="text-menu-item"><h2><?php echo $t['m_classes']; ?></h2></a>
-        <a href="upload_lesson.php" class="text-menu-item"><h2><?php echo $t['m_upload']; ?></h2></a>
-        <a href="view_reports.php" class="text-menu-item"><h2><?php echo $t['m_reports']; ?></h2></a>
-    </div>
-
     <?php if (isset($error)): ?>
-        <div style="background: #fee; color: #b91c1c; padding: 15px; margin-top: 20px; border-radius: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $error; ?></div>
+        <div style="background: #fee; color: #b91c1c; padding: 15px; margin-bottom: 20px; border-radius: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $error; ?></div>
     <?php endif; ?>
     <?php if (isset($success)): ?>
-        <div style="background: #d1fae5; color: #065f46; padding: 15px; margin-top: 20px; border-radius: 5px; line-height: 1.6;"><i class="fa-solid fa-check-circle"></i> <?php echo $success; ?></div>
+        <div style="background: #d1fae5; color: #065f46; padding: 15px; margin-bottom: 20px; border-radius: 5px; line-height: 1.6;"><i class="fa-solid fa-check-circle"></i> <?php echo $success; ?></div>
     <?php endif; ?>
 
-    <div style="background: white; padding: 25px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
+    <!-- ADD / EDIT FORM -->
+    <div style="background: white; padding: 25px; margin-bottom: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
         <h3 style="margin-top: 0; color: var(--primary-color);">
             <i class="fa-solid fa-chalkboard-user"></i> <?php echo $editData ? $t['edit_tch'] : $t['add_tch']; ?>
         </h3>
@@ -289,24 +294,25 @@ if ($result) {
             </div>
             <?php endif; ?>
 
-            <button type="submit" class="action-btn" style="background: var(--accent-color); border: none; cursor: pointer; margin-top: 15px;">
+            <button type="submit" class="btn-dark" style="border: none; cursor: pointer; margin-top: 15px;">
                 <i class="fa-solid <?php echo $editData ? 'fa-save' : 'fa-plus'; ?>"></i>
                 <?php echo $editData ? $t['btn_update'] : $t['btn_add']; ?>
             </button>
             <?php if ($editData): ?>
-                <a href="manage_teachers.php" class="action-btn" style="background: #6b7280; text-decoration:none; display:inline-block; padding:10px 20px; border-radius:6px;"><?php echo $t['btn_cancel']; ?></a>
+                <a href="manage_teachers.php" class="btn-dark" style="background: #6b7280; text-decoration:none; display:inline-block; margin-top: 15px;"><?php echo $t['btn_cancel']; ?></a>
             <?php endif; ?>
         </form>
     </div>
 
-    <div style="background: white; padding: 25px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border-color);">
+    <!-- TEACHER DIRECTORY -->
+    <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color);">
         <h3 style="margin-top: 0; color: var(--primary-color);">
             <i class="fa-solid fa-person-chalkboard"></i> <?php echo $t['directory']; ?> (<?php echo count($teachers); ?>)
         </h3>
         
         <?php if (count($teachers) > 0): ?>
             <div style="overflow-x: auto;">
-                <table class="dash-table" style="width: 100%;">
+                <table class="dash-table">
                     <thead>
                         <tr>
                             <th><?php echo $t['s_no']; ?></th>
@@ -323,16 +329,16 @@ if ($result) {
                             <td><?php echo $serial++; ?></td>
                             <td>
                                 <?php if(!empty($tch['photo_path'])): ?>
-                                    <img src="<?php echo $tch['photo_path']; ?>" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px;">
+                                    <img src="<?php echo $tch['photo_path']; ?>" class="student-photo" alt="Photo">
                                 <?php endif; ?>
-                                <strong><?php echo htmlspecialchars($tch['full_name']); ?></strong>
+                                <strong class="student-name"><?php echo htmlspecialchars($tch['full_name']); ?></strong>
                             </td>
                             <td><?php echo htmlspecialchars($tch['username']); ?></td>
                             <td><?php echo htmlspecialchars($tch['contact_number']); ?></td>
                             <td><?php echo date('d M Y', strtotime($tch['created_at'])); ?></td>
                             <td class="action-icons">
-                                <a href="manage_teachers.php?edit_id=<?php echo $tch['id']; ?>" style="color: #2563eb;" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
-                                <a href="manage_teachers.php?delete_id=<?php echo $tch['id']; ?>" onclick="return confirm('Delete permanently?');" style="color: #ef4444;" title="Delete"><i class="fa-solid fa-trash-can"></i></a>
+                                <a href="manage_teachers.php?edit_id=<?php echo $tch['id']; ?>" class="edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <a href="manage_teachers.php?delete_id=<?php echo $tch['id']; ?>" onclick="return confirm('Delete permanently?');" class="delete" title="Delete"><i class="fa-solid fa-trash-can"></i></a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -344,6 +350,20 @@ if ($result) {
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebarMenu');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+        document.getElementById('sidebarMenu').classList.remove('show');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+</script>
 
 </body>
 </html>
