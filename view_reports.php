@@ -10,7 +10,7 @@ require_once 'backend/db_connect.php';
 $current_role = $_SESSION['role'];
 $teacher_id   = $_SESSION['id'] ?? 0;
 
-// ----- इनलाइन भाषा अनुवाद ऐरे (नो बाहरी डिपेंडेंसी) -----
+// ----- इनलाइन भाषा अनुवाद ऐरे -----
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $_GET['lang'] === 'hi' ? 'hi' : 'en';
 }
@@ -124,44 +124,52 @@ if ($res) {
 </head>
 <body>
 
-<div class="dash-header" style="height: 75px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+<!-- TOP HEADER -->
+<div class="dash-header">
     <div class="header-title">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
         <i class="fa-solid <?php echo $current_role === 'admin' ? 'fa-school' : 'fa-chalkboard-user'; ?>"></i>
-        <span><?php echo $current_role === 'admin' ? $t['admin_panel'] : $t['teacher_portal']; ?> - <?php echo $t['welcome']; ?>, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+        <span><?php echo $current_role === 'admin' ? $t['admin_panel'] : $t['teacher_portal']; ?></span>
     </div>
-    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-        <a href="logout.php" class="logout-btn" style="margin:0; padding: 4px 10px; font-size: 12px;"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
-        <form method="GET" style="margin: 0; padding: 0;">
+    <div class="header-right">
+        <a href="logout.php" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> <?php echo $t['logout']; ?></a>
+        <form method="GET">
             <?php if(!empty($filter_class)): ?><input type="hidden" name="filter_class" value="<?php echo htmlspecialchars($filter_class); ?>"><?php endif; ?>
-            <select name="lang" onchange="this.form.submit()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">
-                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?> style="color: black;">English</option>
-                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?> style="color: black;">हिंदी (Hindi)</option>
+            <select name="lang" onchange="this.form.submit()" class="lang-select">
+                <option value="en" <?php echo $lang === 'en' ? 'selected' : ''; ?>>English</option>
+                <option value="hi" <?php echo $lang === 'hi' ? 'selected' : ''; ?>>हिंदी (Hindi)</option>
             </select>
         </form>
     </div>
 </div>
 
-<div class="dash-container">
+<!-- OVERLAY FOR MOBILE SIDEBAR -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebarMenu">
+    <?php if ($current_role === 'admin'): ?>
+        <a href="admin_dashboard.php"><i class="fa-solid fa-chart-pie"></i> <?php echo $t['overview']; ?></a>
+        <a href="manage_students.php"><i class="fa-solid fa-user-graduate"></i> <?php echo $t['m_students']; ?></a>
+        <a href="manage_teachers.php"><i class="fa-solid fa-chalkboard-user"></i> <?php echo $t['m_teachers']; ?></a>
+        <a href="manage_classes.php"><i class="fa-solid fa-door-open"></i> <?php echo $t['m_classes']; ?></a>
+        <a href="upload_lesson.php"><i class="fa-solid fa-upload"></i> <?php echo $t['m_upload']; ?></a>
+        <a href="view_reports.php" class="active"><i class="fa-solid fa-file-lines"></i> <?php echo $t['m_reports']; ?></a>
+    <?php else: ?>
+        <a href="teacher_dashboard.php"><i class="fa-solid fa-chalkboard-user"></i> <?php echo $t['m_t_classes']; ?></a>
+        <a href="upload_lesson.php"><i class="fa-solid fa-upload"></i> <?php echo $t['m_t_upload']; ?></a>
+        <a href="view_reports.php" class="active"><i class="fa-solid fa-file-lines"></i> <?php echo $t['m_t_reports']; ?></a>
+    <?php endif; ?>
+</aside>
+
+<!-- MAIN PANEL -->
+<div class="main-panel">
     <div class="page-title">
         <h1><?php echo $current_role === 'admin' ? $t['admin_panel'] : $t['teacher_portal']; ?></h1>
         <p><?php echo $current_role === 'admin' ? $t['admin_desc'] : $t['teacher_desc']; ?></p>
     </div>
 
-    <div class="text-menu-bar">
-        <?php if ($current_role === 'admin'): ?>
-            <a href="admin_dashboard.php" class="text-menu-item"><h2><?php echo $t['overview']; ?></h2></a>
-            <a href="manage_students.php" class="text-menu-item"><h2><?php echo $t['m_students']; ?></h2></a>
-            <a href="manage_teachers.php" class="text-menu-item"><h2><?php echo $t['m_teachers']; ?></h2></a>
-            <a href="manage_classes.php" class="text-menu-item"><h2><?php echo $t['m_classes']; ?></h2></a>
-            <a href="upload_lesson.php" class="text-menu-item"><h2><?php echo $t['m_upload']; ?></h2></a>
-            <a href="view_reports.php" class="text-menu-item active"><h2><?php echo $t['m_reports']; ?></h2></a>
-        <?php else: ?>
-            <a href="teacher_dashboard.php" class="text-menu-item"><h2><?php echo $t['m_t_classes']; ?></h2></a>
-            <a href="upload_lesson.php" class="text-menu-item"><h2><?php echo $t['m_t_upload']; ?></h2></a>
-            <a href="view_reports.php" class="text-menu-item active"><h2><?php echo $t['m_t_reports']; ?></h2></a>
-        <?php endif; ?>
-    </div>
-
+    <!-- STATS GRID -->
     <div class="stats-grid">
         <div class="stat-box">
             <div class="stat-icon"><i class="fa-solid fa-user-graduate"></i></div>
@@ -186,13 +194,14 @@ if ($res) {
         </div>
     </div>
 
+    <!-- REPORTS LAYOUT -->
     <div class="reports-layout">
         <div class="report-card">
             <h3 style="margin-top: 0; color: var(--primary-color); font-size: 18px;"><i class="fa-solid fa-fire" style="color: #ea580c;"></i> <?php echo $t['card_engagement']; ?></h3>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;"><?php echo $t['engagement_desc']; ?></p>
             
             <?php if (count($engagement) > 0): ?>
-                <table class="dash-table" style="width: 100%;">
+                <table class="dash-table">
                     <thead>
                         <tr><th><?php echo $t['th_subject']; ?></th><th><?php echo $t['th_views']; ?></th></tr>
                     </thead>
@@ -214,7 +223,7 @@ if ($res) {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                 <div>
                     <h3 style="margin-top: 0; color: var(--primary-color);"><i class="fa-solid fa-bars-progress"></i> <?php echo $t['card_activity']; ?></h3>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15pxStream;"><?php echo $t['activity_desc']; ?></p>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;"><?php echo $t['activity_desc']; ?></p>
                 </div>
                 <form method="GET" class="filter-form">
                     <select name="filter_class">
@@ -230,7 +239,7 @@ if ($res) {
 
             <?php if (count($activity_log) > 0): ?>
                 <div style="overflow-x: auto;">
-                    <table class="dash-table" style="width: 100%;">
+                    <table class="dash-table">
                         <thead>
                             <tr>
                                 <th><?php echo $t['th_roll']; ?></th>
@@ -259,6 +268,20 @@ if ($res) {
         </div>
     </div>
 </div>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebarMenu');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+        document.getElementById('sidebarMenu').classList.remove('show');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+</script>
 
 </body>
 </html>
