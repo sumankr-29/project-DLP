@@ -4,7 +4,7 @@ Web based Digital Learning Platform
 A comprehensive, secure, and multi-language school digital learning platform build to streamline administrative tasks, teacher-student management, and daily school operations.
 
 ## 🌐 Live Webpage
-You can access the live application here: **[gnssdlp.rf.gd](https://gnssdlp.rf.gd/)**
+You can access the live application here: **[project-dlp.infinityfree.io](https://project-dlp.infinityfree.io)**
 
 ---
 
