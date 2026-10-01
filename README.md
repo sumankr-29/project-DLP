@@ -31,4 +31,4 @@ You can access the live application here: **[project-dlp.infinityfree.io](https:
 1. Clone or download the repository to your local server (e.g., XAMPP/WAMP).
 2. Import the project database into your MySQL server.
 3. Update your database connection details inside `backend/db_connect.php`.
-4. Run the project locally or visit the live deployment at **[www.gnssdlp.rf.gd](http://www.gnssdlp.rf.gd)**.
+4. Run the project locally or visit the live deployment at **[project-dlp.infinityfree.io](http://project-dlp.infinityfree.io)**.
